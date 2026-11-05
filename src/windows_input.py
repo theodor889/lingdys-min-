@@ -14,6 +14,8 @@ ULONG_PTR = ctypes.c_size_t
 
 from pathlib import Path
 
+from mathcalc import MATH_CHARS
+
 LOG_FILE = Path(__file__).resolve().parent.parent / "data" / "skriveflyt-logg.txt"
 
 
@@ -103,7 +105,11 @@ class WindowsTypingAssistant:
         on_pause: Callable[[], None] | None = None,
         on_sleep: Callable[[], None] | None = None,
         on_wake: Callable[[], None] | None = None,
+        on_math: Callable[[bool], None] | None = None,
     ) -> None:
+        self.on_math = on_math
+        # F7 turns math mode on/off: then typed calculations get an answer.
+        self.math_mode = False
         self.on_pause = on_pause
         self.on_sleep = on_sleep
         self.on_wake = on_wake
@@ -161,6 +167,8 @@ class WindowsTypingAssistant:
         user32.GetForegroundWindow.restype = wintypes.HWND
         user32.GetAsyncKeyState.argtypes = [ctypes.c_int]
         user32.GetAsyncKeyState.restype = ctypes.c_short
+        user32.GetKeyState.argtypes = [ctypes.c_int]
+        user32.GetKeyState.restype = ctypes.c_short
         user32.SendInput.argtypes = [wintypes.UINT, ctypes.POINTER(INPUT), ctypes.c_int]
         user32.SendInput.restype = wintypes.UINT
         user32.GetWindowTextW.argtypes = [wintypes.HWND, wintypes.LPWSTR, ctypes.c_int]
@@ -325,13 +333,16 @@ class WindowsTypingAssistant:
                 self._post(self.on_toggle_language)
                 return True
 
-        # F7 = close the Windows voice typing window.
-        if vk == 0x76:
+        # F7 = math mode on/off.
+        if vk == 0x76 and self.on_math is not None:
             modifier = any(user32.GetAsyncKeyState(key) & 0x8000 for key in (0x11, 0x12, 0x5B, 0x5C))
             if not modifier:
-                log("F7 trykket: lukk diktering")
+                self.math_mode = not self.math_mode
+                log(f"F7 trykket: matte {'på' if self.math_mode else 'av'}")
                 self._swallow_up_vk = vk
-                threading.Thread(target=self._close_dictation_later, daemon=True).start()
+                self._buffer = ""
+                self._choices = []
+                self._post(self.on_math, self.math_mode)
                 return True
 
         # F9 = read the marked text aloud (F9 again stops). Works in any app.
@@ -366,7 +377,7 @@ class WindowsTypingAssistant:
             self._post(self.on_hide)
             return False
 
-        if (0x31 <= vk <= 0x35 and self._choices_ready()
+        if (0x31 <= vk <= 0x35 and not self.math_mode and self._choices_ready()
                 and time.monotonic() - self._last_typing_at > 0.3):
             index = vk - 0x31
             if self._choose_suggestion(index, user32):
@@ -385,6 +396,10 @@ class WindowsTypingAssistant:
             self._last_typing_at = time.monotonic()
             self._publish()
             return False
+        if vk == 0x20 and self.math_mode and self._buffer:  # spaces inside "9 * 9"
+            self._buffer = (self._buffer + " ")[-60:]
+            self._last_typing_at = time.monotonic()
+            return False
         if vk in (0x20, 0x0D, 0x09):  # Space, Enter, Tab
             self._buffer = ""
             self._choices = []
@@ -392,6 +407,19 @@ class WindowsTypingAssistant:
             return False
 
         char = self._to_char(user32, event, hwnd)
+        if self.math_mode:
+            if char and char in MATH_CHARS:
+                if self._target_hwnd and int(hwnd) != self._target_hwnd:
+                    self._buffer = ""
+                self._target_hwnd = int(hwnd)
+                self._buffer = (self._buffer + char)[-60:]
+                self._last_typing_at = time.monotonic()
+                self._publish()
+            elif char:
+                self._buffer = ""
+                self._choices = []
+                self._post(self.on_hide)
+            return False
         if char and char.isalpha():
             if self._target_hwnd and int(hwnd) != self._target_hwnd:
                 self._buffer = ""
@@ -425,7 +453,8 @@ class WindowsTypingAssistant:
         self._buffer = ""
         self._choices = []
         self._post(self.on_hide)
-        self._post(self.on_learned, typo, selected)
+        if not self.math_mode:
+            self._post(self.on_learned, typo, selected)
         # Type the replacement after the hook has returned, so Windows has
         # finished handling the F-key before new keys are sent.
         threading.Thread(
@@ -452,6 +481,12 @@ class WindowsTypingAssistant:
         state = (ctypes.c_ubyte * 256)()
         if not user32.GetKeyboardState(state):
             return ""
+        # The hook thread's own key state is not updated, so read Shift and
+        # Caps Lock directly (needed for * ( ) = on a Norwegian keyboard).
+        shift = bool(user32.GetAsyncKeyState(0x10) & 0x8000)
+        for key in (0x10, 0xA0, 0xA1):
+            state[key] = 0x80 if shift and key == 0x10 else (0x80 if user32.GetAsyncKeyState(key) & 0x8000 else 0)
+        state[0x14] = 0x01 if (user32.GetKeyState(0x14) & 0x0001) else 0
         state[event.vkCode] |= 0x80
         thread = user32.GetWindowThreadProcessId(hwnd, None)
         layout = user32.GetKeyboardLayout(thread)
@@ -460,7 +495,7 @@ class WindowsTypingAssistant:
         return chars.value[:1] if count > 0 else ""
 
     def _publish(self) -> None:
-        if len(self._buffer) < 2:
+        if len(self._buffer) < (3 if self.math_mode else 2):
             self._choices = []
             self._post(self.on_hide)
             return

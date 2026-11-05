@@ -16,13 +16,15 @@ Krever Python 3 med Tkinter. Det trengs ingen pip-pakker.
 |---|---|
 | F1–F5 | Velg ordforslag 1–5. Det feile ordet byttes ut der du skriver. |
 | F6 | Start/stopp diktering (Windows taleinntasting). Snakk, og teksten skrives. |
-| F7 | Lukk dikteringsvinduet. |
+| F7 | Matte på/av. Skriv for eksempel 9*9, så vises 9*9 = 81. F1 setter inn svaret. |
 | F8 | Bytt språk: norsk ↔ engelsk (ordforslag, diktering og opplesing). |
 | F9 | Les opp markert tekst. F9 igjen stopper. |
 | F10 | Pause i opplesingen. F10 igjen fortsetter. |
 | F11 | Slå av Skriveflyt og skjul vinduet. |
 | F12 | Slå på Skriveflyt igjen og vis vinduet. |
 | Esc | Lukk forslagsvinduet. |
+
+Matte forstår + - * / (også x, : og ÷), ^ for potens, parenteser, prosent (20% * 150) og desimalkomma (2,5).
 
 - Appen starter med skrivehjelp aktivert, og den starter av seg selv når du logger på Windows (kan slås av under Innstillinger).
 - Forslagsvinduet dukker opp nederst til høyre. Du kan også klikke på et ord.

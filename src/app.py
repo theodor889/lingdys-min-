@@ -12,6 +12,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 
 from engine import WritingEngine
+from mathcalc import calculate
 from windows_input import INPUT, KEYBDINPUT, WindowsTypingAssistant, log
 
 
@@ -49,6 +50,7 @@ class SkriveflytApp:
             self._queue_pause,
             self._queue_sleep,
             self._queue_wake,
+            self._queue_math,
         )
         self._speech_paused = False
         self._toast_id = 0
@@ -182,7 +184,7 @@ class SkriveflytApp:
                                       bd=0, padx=15, pady=10, cursor="hand2",
                                       font=("Segoe UI Semibold", 9))
         self.start_button.pack(anchor="e")
-        tk.Label(toggle, text="F1–F5 velger ord  ·  F6 diktering  ·  F7 lukker diktering\n"
+        tk.Label(toggle, text="F1–F5 velger ord  ·  F6 diktering  ·  F7 matte\n"
                               "F8 språk  ·  F9 leser opp  ·  F10 pause  ·  F11 av  ·  F12 på", justify="right",
                  bg=NAVY, fg="#BFC9DE", font=("Segoe UI", 8)).pack(anchor="e", pady=(8, 0))
 
@@ -323,7 +325,9 @@ class SkriveflytApp:
                            "Trykk F10 for pause, og F10 igjen for å fortsette. F9 igjen stopper.\n\n"
                            "F11 slår av Skriveflyt og skjuler vinduet. F12 slår den på igjen.\n\n"
                            "Diktering: trykk F6 der du skriver, og snakk. Teksten skrives for deg.\n"
-                           "Trykk F6 igjen for å stoppe. Trykk F7 for å lukke dikteringsvinduet.",
+                           "Trykk F6 igjen for å stoppe.\n\n"
+                           "Matte: trykk F7, og skriv et regnestykke, for eksempel 9*9.\n"
+                           "Svaret vises i vinduet. F1 setter det inn. F7 igjen slår av matte.",
                  bg=WHITE, fg=MUTED, justify="left", font=("Segoe UI", 10)
                  ).pack(anchor="w", padx=20, pady=(5, 18))
 
@@ -364,7 +368,8 @@ class SkriveflytApp:
         if self.live_active and self.assistant.sleeping:
             self.status_pill.configure(text="●  Av  ·  F12 slår på", bg="#EDF0F5", fg=MUTED)
         elif self.live_active:
-            self.status_pill.configure(text=f"●  Aktiv  ·  {language}", bg=MINT, fg=GREEN)
+            mode = "  ·  Matte" if self.assistant.math_mode else ""
+            self.status_pill.configure(text=f"●  Aktiv  ·  {language}{mode}", bg=MINT, fg=GREEN)
         else:
             self.status_pill.configure(text="●  Av", bg="#EDF0F5", fg=MUTED)
         if self.start_button is not None and self.start_button.winfo_exists():
@@ -414,6 +419,16 @@ class SkriveflytApp:
 
     def _queue_learned(self, typo: str, replacement: str) -> None:
         self._ui_queue.put((self._show_learned, (typo, replacement)))
+
+    def _queue_math(self, on: bool) -> None:
+        self._ui_queue.put((self._math_changed, (on,)))
+
+    def _math_changed(self, on: bool) -> None:
+        self._update_status()
+        if on:
+            self._show_toast("Matte: på", "Skriv for eksempel 9*9 · F1 setter inn svaret · F7 slår av")
+        else:
+            self._show_toast("Matte: av", "Ordforslag er tilbake · F7 slår på matte")
 
     def _queue_sleep(self) -> None:
         self._ui_queue.put((self.sleep_app, ()))
@@ -478,12 +493,55 @@ class SkriveflytApp:
     def _show_live_suggestions(self, typed: str, target: int) -> None:
         if not self.live_active:
             return
+        if self.assistant.math_mode:
+            result = calculate(typed, self.engine.language)
+            if result is None:
+                self.assistant.set_suggestions(typed, [], target)
+                self._hide_live_overlay()
+                return
+            shown, insert = result
+            self.assistant.set_suggestions(typed, [insert] if insert else [], target)
+            self._show_math_overlay(shown, bool(insert))
+            return
         choices = self.engine.suggestions(typed)
         self.assistant.set_suggestions(typed, choices, target)
         if choices:
             self._show_live_overlay(typed, choices)
         else:
             self._hide_live_overlay()
+
+    def _show_math_overlay(self, shown: str, can_insert: bool) -> None:
+        if self.live_overlay is None or not self.live_overlay.winfo_exists():
+            self._create_live_overlay()
+        popup = self.live_overlay
+        for child in popup.winfo_children():
+            child.destroy()
+        tk.Label(popup, text="MATTE", bg=WHITE, fg=MUTED,
+                 font=("Segoe UI Semibold", 8), anchor="w").pack(fill="x", padx=14, pady=(11, 5))
+        row = tk.Frame(popup, bg=WHITE)
+        row.pack(fill="x", padx=9, pady=1)
+        answer = tk.Label(row, text=shown, bg=WHITE, fg=INK, cursor="hand2" if can_insert else "",
+                          font=("Segoe UI Semibold", 15), anchor="w")
+        answer.pack(side="left", padx=6, fill="x", expand=True)
+        if can_insert:
+            hint = tk.Label(row, text="F1", bg="#F4F6FA", fg=INK,
+                            font=("Segoe UI Semibold", 9), padx=6, cursor="hand2")
+            hint.pack(side="right", padx=(8, 6))
+            for item in (row, answer, hint):
+                item.bind("<Button-1>", lambda _event: self._select_live_suggestion(0))
+        tk.Label(popup, text="F1 setter inn svaret  ·  F7 slår av matte",
+                 bg=WHITE, fg=MUTED, font=("Segoe UI", 8), anchor="w").pack(fill="x", padx=14, pady=(5, 10))
+        popup.update_idletasks()
+        width = max(260, popup.winfo_reqwidth())
+        height = popup.winfo_reqheight()
+        x = max(12, self.root.winfo_screenwidth() - width - 24)
+        y = max(12, self.root.winfo_screenheight() - height - 72)
+        popup.geometry(f"{width}x{height}+{x}+{y}")
+        popup.update_idletasks()
+        if os.name == "nt" and self.live_overlay_hwnd:
+            self._win_place(self.live_overlay_hwnd, x, y, width, height)
+        else:
+            popup.deiconify()
 
     def _create_live_overlay(self) -> None:
         """Create the suggestion popup once, while Skriveflyt itself has focus.
