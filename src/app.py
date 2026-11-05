@@ -183,7 +183,7 @@ class SkriveflytApp:
                                       font=("Segoe UI Semibold", 9))
         self.start_button.pack(anchor="e")
         tk.Label(toggle, text="F1–F5 velger ord  ·  F6 diktering  ·  F7 lukker diktering\n"
-                              "F8 av  ·  F9 leser opp  ·  F10 pause  ·  F11 på  ·  F12 språk", justify="right",
+                              "F8 språk  ·  F9 leser opp  ·  F10 pause  ·  F11 av  ·  F12 på", justify="right",
                  bg=NAVY, fg="#BFC9DE", font=("Segoe UI", 8)).pack(anchor="e", pady=(8, 0))
 
         row = tk.Frame(self._page, bg=BG)
@@ -321,7 +321,7 @@ class SkriveflytApp:
                            "Trykk Esc for å lukke forslagene.\n\n"
                            "Les opp tekst: marker tekst i et hvilket som helst program og trykk F9.\n"
                            "Trykk F10 for pause, og F10 igjen for å fortsette. F9 igjen stopper.\n\n"
-                           "F8 slår av Skriveflyt og skjuler vinduet. F11 slår den på igjen.\n\n"
+                           "F11 slår av Skriveflyt og skjuler vinduet. F12 slår den på igjen.\n\n"
                            "Diktering: trykk F6 der du skriver, og snakk. Teksten skrives for deg.\n"
                            "Trykk F6 igjen for å stoppe. Trykk F7 for å lukke dikteringsvinduet.",
                  bg=WHITE, fg=MUTED, justify="left", font=("Segoe UI", 10)
@@ -331,7 +331,7 @@ class SkriveflytApp:
         lang_card.pack(fill="x", pady=(0, 14))
         tk.Label(lang_card, text="Språk", bg=WHITE, fg=INK,
                  font=("Segoe UI Semibold", 13)).pack(anchor="w", padx=20, pady=(18, 4))
-        tk.Label(lang_card, text="F12 bytter mellom norsk og engelsk: ordforslag, diktering og opplesing.",
+        tk.Label(lang_card, text="F8 bytter mellom norsk og engelsk: ordforslag, diktering og opplesing.",
                  bg=WHITE, fg=MUTED, font=("Segoe UI", 9)).pack(anchor="w", padx=20)
         self.language_button = ttk.Button(lang_card, command=self.toggle_language, style="Primary.TButton")
         self.language_button.pack(anchor="w", padx=20, pady=(13, 19))
@@ -362,7 +362,7 @@ class SkriveflytApp:
             return
         language = "Norsk" if self.engine.language == "nb" else "Engelsk"
         if self.live_active and self.assistant.sleeping:
-            self.status_pill.configure(text="●  Av  ·  F11 slår på", bg="#EDF0F5", fg=MUTED)
+            self.status_pill.configure(text="●  Av  ·  F12 slår på", bg="#EDF0F5", fg=MUTED)
         elif self.live_active:
             self.status_pill.configure(text=f"●  Aktiv  ·  {language}", bg=MINT, fg=GREEN)
         else:
@@ -422,21 +422,21 @@ class SkriveflytApp:
         self._ui_queue.put((self.wake_app, ()))
 
     def sleep_app(self) -> None:
-        """F8: hide Skriveflyt and turn all help off until F11."""
+        """F11: hide Skriveflyt and turn all help off until F12."""
         self.stop_speaking()
         self._hide_live_overlay()
         self.root.withdraw()
         self._update_status()
-        self._show_toast("Skriveflyt er av", "Trykk F11 for å slå den på igjen")
+        self._show_toast("Skriveflyt er av", "Trykk F12 for å slå den på igjen")
 
     def wake_app(self) -> None:
-        """F11: show Skriveflyt again and turn the help on."""
+        """F12: show Skriveflyt again and turn the help on."""
         if not self.live_active:
             self.start_live()
         self.root.deiconify()
         self.root.lift()
         self._update_status()
-        self._show_toast("Skriveflyt er på", "F8 slår den av")
+        self._show_toast("Skriveflyt er på", "F11 slår den av")
 
     def _queue_pause(self) -> None:
         self._ui_queue.put((self.pause_speaking, ()))
@@ -910,7 +910,7 @@ class SkriveflytApp:
         if button is not None and button.winfo_exists():
             current = "Norsk" if self.engine.language == "nb" else "Engelsk"
             other = "engelsk" if self.engine.language == "nb" else "norsk"
-            button.configure(text=f"Nå: {current}  —  bytt til {other} (F12)")
+            button.configure(text=f"Nå: {current}  —  bytt til {other} (F8)")
 
     def _show_toast(self, title: str, detail: str) -> None:
         if self.live_overlay is None or not self.live_overlay.winfo_exists():

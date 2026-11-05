@@ -107,7 +107,7 @@ class WindowsTypingAssistant:
         self.on_pause = on_pause
         self.on_sleep = on_sleep
         self.on_wake = on_wake
-        # F8 puts Skriveflyt to sleep (nothing happens) until F11 wakes it.
+        # F11 puts Skriveflyt to sleep (nothing happens) until F12 wakes it.
         self.sleeping = False
         self.on_dictate = on_dictate
         self.on_toggle_language = on_toggle_language
@@ -260,19 +260,19 @@ class WindowsTypingAssistant:
                 f"tid_igjen={left:.1f}s fg={int(hwnd or 0)} mål={self._target_hwnd} "
                 f"popup={self.overlay_hwnd} vår={self._foreground_is_ours(user32, hwnd) if hwnd else None}")
 
-        # F8 = turn Skriveflyt off (sleep), F11 = turn it on again.
-        if vk in (0x77, 0x7A) and (self.on_sleep or self.on_wake):
+        # F11 = turn Skriveflyt off (sleep), F12 = turn it on again.
+        if vk in (0x7A, 0x7B) and (self.on_sleep or self.on_wake):
             modifier = any(user32.GetAsyncKeyState(key) & 0x8000 for key in (0x11, 0x12, 0x5B, 0x5C))
             if not modifier:
                 self._swallow_up_vk = vk
                 self._buffer = ""
                 self._choices = []
-                if vk == 0x77:
-                    log("F8 trykket: Skriveflyt av")
+                if vk == 0x7A:
+                    log("F11 trykket: Skriveflyt av")
                     self.sleeping = True
                     self._post(self.on_sleep)
                 else:
-                    log("F11 trykket: Skriveflyt på")
+                    log("F12 trykket: Skriveflyt på")
                     self.sleeping = False
                     self._post(self.on_wake)
                 return True
@@ -314,11 +314,11 @@ class WindowsTypingAssistant:
                 self._post(self.on_pause)
                 return True
 
-        # F12 = switch language (Norwegian <-> English).
-        if vk == 0x7B and self.on_toggle_language is not None:
+        # F8 = switch language (Norwegian <-> English).
+        if vk == 0x77 and self.on_toggle_language is not None:
             modifier = any(user32.GetAsyncKeyState(key) & 0x8000 for key in (0x11, 0x12, 0x5B, 0x5C))
             if not modifier:
-                log("F12 trykket: bytt språk")
+                log("F8 trykket: bytt språk")
                 self._swallow_up_vk = vk
                 self._buffer = ""
                 self._choices = []

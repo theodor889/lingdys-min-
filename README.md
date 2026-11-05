@@ -17,11 +17,11 @@ Krever Python 3 med Tkinter. Det trengs ingen pip-pakker.
 | F1–F5 | Velg ordforslag 1–5. Det feile ordet byttes ut der du skriver. |
 | F6 | Start/stopp diktering (Windows taleinntasting). Snakk, og teksten skrives. |
 | F7 | Lukk dikteringsvinduet. |
-| F8 | Slå av Skriveflyt og skjul vinduet. |
+| F8 | Bytt språk: norsk ↔ engelsk (ordforslag, diktering og opplesing). |
 | F9 | Les opp markert tekst. F9 igjen stopper. |
 | F10 | Pause i opplesingen. F10 igjen fortsetter. |
-| F11 | Slå på Skriveflyt igjen og vis vinduet. |
-| F12 | Bytt språk: norsk ↔ engelsk (ordforslag, diktering og opplesing). |
+| F11 | Slå av Skriveflyt og skjul vinduet. |
+| F12 | Slå på Skriveflyt igjen og vis vinduet. |
 | Esc | Lukk forslagsvinduet. |
 
 - Appen starter med skrivehjelp aktivert, og den starter av seg selv når du logger på Windows (kan slås av under Innstillinger).
@@ -32,7 +32,7 @@ Krever Python 3 med Tkinter. Det trengs ingen pip-pakker.
 
 ### Engelsk diktering
 
-F12 bytter også tastaturspråket i Windows, fordi diktering lytter på tastaturspråket.
+F8 bytter også tastaturspråket i Windows, fordi diktering lytter på tastaturspråket.
 Har du lagt til engelsk i Windows (gjerne med norsk tastatur), brukes det. Hvis ikke legges
 et amerikansk tastatur til midlertidig mens engelsk er på — da ligger æ, ø og å på andre taster.
 
@@ -47,4 +47,3 @@ under CC BY-SA 4.0.
 Dette er en fungerende startversjon med norske og engelske ordlister, personlige rettinger, prediksjon, tekstkontroll, opplesing og Windows-diktering. Ordlistene har 50 000 vanlige ord per språk; legg til navn, fagord og egne rettinger under Mine ord. Full grammatikkontroll, nynorsk, skjermskanning/OCR, matematikkopplesing og lydfil-eksport er ikke med ennå.
 
 Personlige ord og rettinger ligger lokalt i prosjektets data-mappe. Diktering åpner Windows Taleinntasting, som følger personverninnstillingene i Windows.
-"# lingdys-min-" 
