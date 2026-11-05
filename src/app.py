@@ -185,7 +185,7 @@ class SkriveflytApp:
                                       font=("Segoe UI Semibold", 9))
         self.start_button.pack(anchor="e")
         tk.Label(toggle, text="F1–F5 velger ord  ·  F6 diktering  ·  F7 matte\n"
-                              "F8 språk  ·  F9 leser opp  ·  F10 pause  ·  F11 av  ·  F12 på", justify="right",
+                              "F8 språk  ·  F9 leser opp  ·  F10 pause  ·  Esc av  ·  F12 på", justify="right",
                  bg=NAVY, fg="#BFC9DE", font=("Segoe UI", 8)).pack(anchor="e", pady=(8, 0))
 
         row = tk.Frame(self._page, bg=BG)
@@ -320,10 +320,10 @@ class SkriveflytApp:
         tk.Label(how, text="1. Skriv som vanlig i et annet program.\n"
                            "2. Når forslagsvinduet vises, trykk F1 for ord 1, F2 for ord 2, osv. (opp til F5).\n"
                            "3. Ordet byttes ut og rettingen huskes lokalt.\n"
-                           "Trykk Esc for å lukke forslagene.\n\n"
+                           "Esc slår av Skriveflyt (F12 slår den på).\n\n"
                            "Les opp tekst: marker tekst i et hvilket som helst program og trykk F9.\n"
                            "Trykk F10 for pause, og F10 igjen for å fortsette. F9 igjen stopper.\n\n"
-                           "F11 slår av Skriveflyt og skjuler vinduet. F12 slår den på igjen.\n\n"
+                           "Esc slår av Skriveflyt og skjuler vinduet. F12 slår den på igjen.\n\n"
                            "Diktering: trykk F6 der du skriver, og snakk. Teksten skrives for deg.\n"
                            "Trykk F6 igjen for å stoppe.\n\n"
                            "Matte: trykk F7, og skriv et regnestykke, for eksempel 9*9.\n"
@@ -437,7 +437,7 @@ class SkriveflytApp:
         self._ui_queue.put((self.wake_app, ()))
 
     def sleep_app(self) -> None:
-        """F11: hide Skriveflyt and turn all help off until F12."""
+        """Esc: hide Skriveflyt and turn all help off until F12."""
         self.stop_speaking()
         self._hide_live_overlay()
         self.root.withdraw()
@@ -451,7 +451,7 @@ class SkriveflytApp:
         self.root.deiconify()
         self.root.lift()
         self._update_status()
-        self._show_toast("Skriveflyt er på", "F11 slår den av")
+        self._show_toast("Skriveflyt er på", "Esc slår den av")
 
     def _queue_pause(self) -> None:
         self._ui_queue.put((self.pause_speaking, ()))
@@ -604,7 +604,7 @@ class SkriveflytApp:
             for item in (row, number, word_label, hint):
                 item.bind("<Button-1>", lambda _event, picked=index - 1:
                           self._select_live_suggestion(picked))
-        tk.Label(popup, text="Trykk F1 for ord 1, F2 for ord 2 …  ·  Esc lukker",
+        tk.Label(popup, text="Trykk F1 for ord 1, F2 for ord 2 …  ·  Esc slår av",
                  bg=WHITE, fg=MUTED,
                  font=("Segoe UI", 8), anchor="w").pack(fill="x", padx=14, pady=(5, 10))
         popup.update_idletasks()

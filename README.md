@@ -20,9 +20,8 @@ Krever Python 3 med Tkinter. Det trengs ingen pip-pakker.
 | F8 | Bytt språk: norsk ↔ engelsk (ordforslag, diktering og opplesing). |
 | F9 | Les opp markert tekst. F9 igjen stopper. |
 | F10 | Pause i opplesingen. F10 igjen fortsetter. |
-| F11 | Slå av Skriveflyt og skjul vinduet. |
 | F12 | Slå på Skriveflyt igjen og vis vinduet. |
-| Esc | Lukk forslagsvinduet. |
+| Esc | Slå av Skriveflyt og skjul vinduet (Esc virker også som vanlig i programmet du er i). |
 
 Matte forstår + - * / (også x, : og ÷), ^ for potens, parenteser, prosent (20% * 150) og desimalkomma (2,5).
 

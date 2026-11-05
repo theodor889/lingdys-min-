@@ -113,7 +113,7 @@ class WindowsTypingAssistant:
         self.on_pause = on_pause
         self.on_sleep = on_sleep
         self.on_wake = on_wake
-        # F11 puts Skriveflyt to sleep (nothing happens) until F12 wakes it.
+        # Esc puts Skriveflyt to sleep (nothing happens) until F12 wakes it.
         self.sleeping = False
         self.on_dictate = on_dictate
         self.on_toggle_language = on_toggle_language
@@ -268,21 +268,26 @@ class WindowsTypingAssistant:
                 f"tid_igjen={left:.1f}s fg={int(hwnd or 0)} mål={self._target_hwnd} "
                 f"popup={self.overlay_hwnd} vår={self._foreground_is_ours(user32, hwnd) if hwnd else None}")
 
-        # F11 = turn Skriveflyt off (sleep), F12 = turn it on again.
-        if vk in (0x7A, 0x7B) and (self.on_sleep or self.on_wake):
+        # Esc = turn Skriveflyt off (sleep), F12 = turn it on again.
+        # Esc is NOT hidden from other programs, so it still works there too.
+        if vk == 0x1B and self.on_sleep is not None and not self.sleeping:
+            modifier = any(user32.GetAsyncKeyState(key) & 0x8000 for key in (0x11, 0x12, 0x5B, 0x5C))
+            if not modifier:
+                log("Esc trykket: Skriveflyt av")
+                self._buffer = ""
+                self._choices = []
+                self.sleeping = True
+                self._post(self.on_sleep)
+                return False
+        if vk == 0x7B and self.on_wake is not None:
             modifier = any(user32.GetAsyncKeyState(key) & 0x8000 for key in (0x11, 0x12, 0x5B, 0x5C))
             if not modifier:
                 self._swallow_up_vk = vk
                 self._buffer = ""
                 self._choices = []
-                if vk == 0x7A:
-                    log("F11 trykket: Skriveflyt av")
-                    self.sleeping = True
-                    self._post(self.on_sleep)
-                else:
-                    log("F12 trykket: Skriveflyt på")
-                    self.sleeping = False
-                    self._post(self.on_wake)
+                log("F12 trykket: Skriveflyt på")
+                self.sleeping = False
+                self._post(self.on_wake)
                 return True
         if self.sleeping:
             return False
