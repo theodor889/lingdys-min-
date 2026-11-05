@@ -1,0 +1,5 @@
+__pycache__/
+*.py[cod]
+
+# Personlige ord, innstillinger og logg skal ikke til GitHub
+data/
